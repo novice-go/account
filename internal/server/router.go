@@ -11,6 +11,6 @@ type Server struct {
 
 func(s *Server)newRouter () {
 	r := gin.Default()
-	g := r.Group("/api/v1")
+	g := r.Group("/api/v1/")
 	g.POST("login", s.Login)
 }
