@@ -6,11 +6,17 @@ import (
 )
 
 type Server struct {
-	loginManger service.LoginManager
+	loginManger *service.LoginManager
 }
 
-func(s *Server)newRouter () {
-	r := gin.Default()
-	g := r.Group("/api/v1/")
-	g.POST("login", s.Login)
+func (s *Server) NewRouter() *gin.Engine {
+	//gin.SetMode(gin.ReleaseMode)
+	e := gin.New()
+
+	g := e.Group("/api/v1/")
+	//g.POST("login", s.Login)
+	//g.POST("register", s.Register)
+	g.POST("gen_vcode", s.GenVCode)
+
+	return e
 }

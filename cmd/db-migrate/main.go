@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"github.com/urfave/cli"
 	"os"
+	"wdkj/account/model"
+	mysql_db "wdkj/account/utils/mysql-db"
 )
 
 func main() {
+	fmt.Println("db action...")
 	app := cli.NewApp()
 	app.Name = "db action"
 	app.Flags = []cli.Flag{
@@ -23,17 +26,29 @@ func main() {
 	}
 }
 
-func create (c *cli.Context) error {
+func create(c *cli.Context) error {
 	fmt.Println("create")
-	return nil
+	db := mysql_db.NewMysqlGormConn()
+	return db.DB.CreateTable(
+		&model.Account{},
+		&model.SMSFlow{},
+		&model.VCode{},
+	).Error
 }
 
-func drop (c *cli.Context) error {
+func drop(c *cli.Context) error {
 	fmt.Println("drop")
-	return nil
+	db := mysql_db.NewMysqlGormConn()
+	return db.DB.DropTableIfExists().Error
 }
 
-func migrate (c *cli.Context) error {
+func migrate(c *cli.Context) error {
 	fmt.Println("migrate")
-	return nil
+	db := mysql_db.NewMysqlGormConn()
+	db.DB.LogMode(true)
+	return db.DB.AutoMigrate(
+		&model.Account{},
+		&model.SMSFlow{},
+		&model.VCode{},
+		).Error
 }

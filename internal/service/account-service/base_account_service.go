@@ -20,6 +20,10 @@ type AccountService struct {
 	dao AccountDAO
 }
 
+func NewAccountService(dao AccountDAO) *AccountService {
+	return &AccountService{dao: dao}
+}
+
 func (a *AccountService) Register(c AccContext) error {
 	data, ok := c.GetParam().(*model.Account)
 	if !ok {

@@ -10,6 +10,10 @@ type AccountDAO struct {
 
 }
 
+func NewAccountDAO() *AccountDAO {
+	return &AccountDAO{}
+}
+
 func (a AccountDAO) QueryAccountByPhone(phone string) (*model.Account, error) {
 	panic("implement me")
 }
