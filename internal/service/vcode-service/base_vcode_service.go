@@ -1,8 +1,10 @@
 package vcode_service
 
 import (
+	"errors"
 	"go.uber.org/zap"
 	"time"
+	"wdkj/account/internal/ctx"
 	"wdkj/account/model"
 	"wdkj/account/utils"
 	"wdkj/account/utils/log"
@@ -14,7 +16,9 @@ type VCodeFLowDAO interface {
 }
 
 type VCodeDAO interface {
-	SaveVCode(flow *model.VCode) error
+	SaveVCode(*model.VCode) error
+	QueryVCode(phone, typ string) (code *model.VCode, err error)
+	UpdateVCode(fields map[string]interface{}, condition *model.VCode) error
 }
 
 type Sender interface {
@@ -31,7 +35,7 @@ func NewVCodeService(flowDAO VCodeFLowDAO, dao VCodeDAO, sender Sender) *VCodeSe
 	return &VCodeService{flowDAO: flowDAO, dao: dao, sender: sender}
 }
 
-func (s *VCodeService) GenVCode(c VCodeContext) error {
+func (s *VCodeService) GenVCode(c ctx.VCodeContext) error {
 	// 校验该手机当天该类型验证码发送次数
 	count, err := s.flowDAO.GetVCodeCountByPhone(c.GetPhone(), c.GetVCodeType(), utils.StatusSuccess)
 	if err != nil {
@@ -58,7 +62,7 @@ func (s *VCodeService) GenVCode(c VCodeContext) error {
 
 	// 保存验证码信息
 	if err := s.dao.SaveVCode(&model.VCode{
-		Account:   model.Account{Phone:c.GetPhone()},
+		Account:   model.Account{Phone: c.GetPhone()},
 		Used:      false,
 		VCode:     flow.Content,
 		ErrTimes:  0,
@@ -67,8 +71,34 @@ func (s *VCodeService) GenVCode(c VCodeContext) error {
 		return err
 	}
 
-	c.SetResult(count+1)
+	c.SetResult(count + 1)
 	return nil
+}
+
+func (s *VCodeService) AuthVCode(phone, vcode, typ string) error {
+	resp, err := s.dao.QueryVCode(phone, typ)
+
+	switch {
+	case err != nil:
+		return err
+	case resp.Used:
+		return  errors.New("Please get the verification code again. ")
+	case resp.ErrTimes > 4:
+		return  errors.New("Please get the verification code again. ")
+	case resp.VCode != vcode:
+		if err = s.dao.UpdateVCode(map[string]interface{}{"err_times":resp.ErrTimes+1}, &model.VCode{
+			Account:   model.Account{Phone:phone},
+			VCodeType: typ,
+		}); err != nil {
+			log.Logger.Error("update vcode err_times fail", zap.Error(err))
+		}
+		return errors.New("Invalid verification code. ")
+	}
+
+	return  s.dao.UpdateVCode(map[string]interface{}{"used":true}, &model.VCode{
+		Account:   model.Account{Phone:phone},
+		VCodeType: typ,
+	})
 }
 
 // 暂不开发短信发送功能, 暂用mock
@@ -81,7 +111,7 @@ func NewMockSenderImpl() *mockSenderImpl {
 func (m *mockSenderImpl) SendSMS(vcode, typ, phone string) (*model.SMSFlow, error) {
 	t := time.Now()
 	flow := &model.SMSFlow{
-		Account:    model.Account{Phone:phone},
+		Account:    model.Account{Phone: phone},
 		Content:    vcode,
 		FlowNo:     utils.GetMsgId(),
 		SendStatus: utils.StatusSuccess,
@@ -92,5 +122,3 @@ func (m *mockSenderImpl) SendSMS(vcode, typ, phone string) (*model.SMSFlow, erro
 	// send sms
 	return flow, nil
 }
-
-

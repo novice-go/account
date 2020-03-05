@@ -10,5 +10,5 @@ type VCode struct {
 	Used      bool   `json:"used" name:"是否已被使用"`
 	VCode     string `json:"v_code" name:"验证码"`
 	ErrTimes  int    `json:"err_times" name:"错误次数"`
-	VCodeType string `json:"v_code_type" name:"验证码类型"`
+	VCodeType string `gorm:"index" json:"v_code_type" name:"验证码类型"`
 }

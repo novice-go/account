@@ -2,18 +2,28 @@ package server
 
 import (
 	"github.com/go-redis/redis"
+	"os"
 	"wdkj/account/internal/dao"
 	"wdkj/account/internal/dao/db"
 	"wdkj/account/internal/service"
 	account_service "wdkj/account/internal/service/account-service"
 	vcode_service "wdkj/account/internal/service/vcode-service"
-	"wdkj/account/utils"
+	"wdkj/account/model"
+	"wdkj/account/utils/config"
 	mysql_db "wdkj/account/utils/mysql-db"
 )
 
 func Builder() *Server {
-	redisCache := getRedis()
-	mysqlDB := mysql_db.NewMysqlGormConn()
+	conf := getConfig()
+
+	redisCache := getRedis(conf.RedisConf)
+	mysqlDB := mysql_db.NewMysqlGormConn(&mysql_db.DBConfig{
+		Host:     conf.DBConfig.Host,
+		Port:     conf.DBConfig.Port,
+		Name:     conf.DBConfig.User,
+		Password: conf.DBConfig.Pw,
+		DBName:   conf.DBConfig.DbName,
+	})
 
 	vcodeDB := db.NewVCodeDB(mysqlDB)
 
@@ -26,19 +36,26 @@ func Builder() *Server {
 
 	loginManager := service.NewLoginManager(accService, vcodeService)
 
-	return &Server{loginManger:loginManager}
+	return &Server{loginManger: loginManager}
 }
 
+func getConfig() *model.Config {
+	resp := &model.Config{}
+	if err := config.InitConfig(os.Getenv("GOPATH")+"/src/wdkj/account/config.yaml", resp); err != nil {
+		panic(err)
+	}
 
-func getRedis() *redis.Client {
+	return resp
+}
+
+func getRedis(conf model.RedisConf) *redis.Client {
 	client := redis.NewClient(&redis.Options{
-		Addr:     utils.GetRedisUrl(),
-		Password: "", // no password set
-		DB:       10,  // use default DB
+		Addr:     conf.Host + ":" + conf.Port,
+		Password: conf.Pw, // no password set
+		DB:       conf.Db, // use default DB
 	})
 
-	_, err := client.Ping().Result()
-	if err != nil {
+	if _, err := client.Ping().Result(); err != nil {
 		panic(err)
 	}
 	return client

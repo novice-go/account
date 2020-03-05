@@ -28,6 +28,3 @@ func CombineStr(data ...string) string {
 	return str
 }
 
-func GetRedisUrl() string {
-	return RedisHost + ":" + RedisPort
-}

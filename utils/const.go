@@ -8,10 +8,6 @@ const (
 	DateLayoutFormat     = "20060102"            // 日期格式化, 不带横杆
 	DateTimeLayoutFormat = "20060102150405"      // 时间格式化, 不带横杆
 
-	// redis
-	RedisHost = "localhost" // redis 地址
-	RedisPort = "6379"      // redis 端口
-
 	// vcode type
 	VCodeTypeLogin    = "login"    // 登录
 	VcodeTypeRegister = "register" // 注册

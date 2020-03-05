@@ -1,1 +1,1 @@
-1. 创建数据库表, 在项目根目录下执行$: make mysql-init
+### 功能概述- 生成验证码```    由于没有与短信商合作, 故调用生成验证码接口后, 请移步到account.v_codes表查询```### 项目涉及技术- redis安装及启动, 参考:[各系统安装redis方法](https://blog.csdn.net/NiQinGe/article/details/103961377)### 项目部署步骤 1. 下载```     $: cd ~/go/src    $: git clone git@github.com:novice-go/account.git``` 2. 获取依赖包```    $: cd account    $: go mod tidy     $: go mod vendor``` 3.创建数据库表, 在项目根目录下执行```    $: make mysql-init```

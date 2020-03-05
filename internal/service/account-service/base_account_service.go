@@ -3,12 +3,13 @@ package account_service
 import (
 	"errors"
 	"github.com/jinzhu/gorm"
+	"wdkj/account/internal/ctx"
 	"wdkj/account/model"
 )
 
 type AccountDAO interface {
 	QueryAccountByPhone(phone string) (*model.Account, error)
-	CreateAccount (account *model.Account) error
+	CreateAccount(account *model.Account) error
 }
 
 type TokenDAO interface {
@@ -24,7 +25,7 @@ func NewAccountService(dao AccountDAO) *AccountService {
 	return &AccountService{dao: dao}
 }
 
-func (a *AccountService) Register(c AccContext) error {
+func (a *AccountService) Register(c ctx.AccContext) error {
 	data, ok := c.GetParam().(*model.Account)
 	if !ok {
 		return errors.New("##AccountService.Register param to model.account fail")
@@ -33,7 +34,7 @@ func (a *AccountService) Register(c AccContext) error {
 	return a.dao.CreateAccount(data)
 }
 
-func (a *AccountService) Login(c AccContext) error {
+func (a *AccountService) Login(c ctx.AccContext) error {
 	// 验证用户是否存在
 	resp, err := a.dao.QueryAccountByPhone(c.GetPhone())
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -44,6 +45,3 @@ func (a *AccountService) Login(c AccContext) error {
 	c.SetResult(resp)
 	return nil
 }
-
-
-

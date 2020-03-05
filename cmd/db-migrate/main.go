@@ -5,7 +5,8 @@ import (
 	"github.com/urfave/cli"
 	"os"
 	"wdkj/account/model"
-	mysql_db "wdkj/account/utils/mysql-db"
+	"wdkj/account/utils/config"
+	mysqlDb "wdkj/account/utils/mysql-db"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 
 func create(c *cli.Context) error {
 	fmt.Println("create")
-	db := mysql_db.NewMysqlGormConn()
+	db := mysqlDb.NewMysqlGormConn(getDBConfig())
 	return db.DB.CreateTable(
 		&model.Account{},
 		&model.SMSFlow{},
@@ -38,17 +39,36 @@ func create(c *cli.Context) error {
 
 func drop(c *cli.Context) error {
 	fmt.Println("drop")
-	db := mysql_db.NewMysqlGormConn()
-	return db.DB.DropTableIfExists().Error
+	db := mysqlDb.NewMysqlGormConn(getDBConfig())
+	return db.DB.DropTableIfExists(
+		&model.Account{},
+		&model.SMSFlow{},
+		&model.VCode{},
+	).Error
 }
 
 func migrate(c *cli.Context) error {
 	fmt.Println("migrate")
-	db := mysql_db.NewMysqlGormConn()
+	db := mysqlDb.NewMysqlGormConn(getDBConfig())
 	db.DB.LogMode(true)
 	return db.DB.AutoMigrate(
 		&model.Account{},
 		&model.SMSFlow{},
 		&model.VCode{},
-		).Error
+	).Error
+}
+
+func getDBConfig() *mysqlDb.DBConfig {
+	conf := &model.Config{}
+	if err := config.InitConfig(os.Getenv("GOPATH")+"/src/wdkj/account/config.yaml", conf); err != nil {
+		panic(err)
+	}
+
+	return &mysqlDb.DBConfig{
+		Host:     conf.DBConfig.Host,
+		Port:     conf.DBConfig.Port,
+		Name:     conf.DBConfig.User,
+		Password: conf.DBConfig.Pw,
+		DBName:   conf.DBConfig.DbName,
+	}
 }

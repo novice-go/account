@@ -1,0 +1,1 @@
+db:  host:    127.0.0.1  port:    3306  user:    root  pw:    1234  db_name:    accountredis:  host:    localhost  port:    6379  db:    10conf:

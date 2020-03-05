@@ -13,6 +13,8 @@ type VCodeDB interface {
 	SaveVCode(code *model.VCode) error
 	QueryVCodeCountByPhone(phone, typ, status string) (count int, err error)
 	SaveVCodeFlow(flow *model.SMSFlow) error
+	QueryLastVCode(map[string]interface{}) (*model.VCode, error)
+	UpdateLastVCode(fields map[string]interface{}, condition *model.VCode) error
 }
 
 type VCodeDAO struct {
@@ -25,8 +27,15 @@ func NewVCodeDAO(db VCodeDB, cache *redis.Client) *VCodeDAO {
 }
 
 func (dao *VCodeDAO) SaveVCode(data *model.VCode) error {
+	return  dao.db.SaveVCode(data)
+}
 
-	return dao.db.SaveVCode(data)
+func (dao *VCodeDAO) UpdateVCode(fields map[string]interface{}, condition *model.VCode) error {
+	return dao.db.UpdateLastVCode(fields, condition)
+}
+
+func (dao *VCodeDAO) QueryVCode(phone, typ string) (*model.VCode, error) {
+	return dao.db.QueryLastVCode(map[string]interface{}{"phone": phone, "v_code_type": typ})
 }
 
 /*
@@ -36,7 +45,7 @@ func (dao *VCodeDAO) GetVCodeCountByPhone(phone, typ, status string) (count uint
 	// cache get
 	key := utils.CombineStr(phone, typ)
 	// cache get
-	cnt, err := dao.getCache(key)
+	cnt, err := dao.getCacheVCodeCount(key)
 	if err == nil {
 		return cnt, nil
 	}
@@ -57,7 +66,7 @@ func (dao *VCodeDAO) SaveVCodeFlow(flow *model.SMSFlow) error {
 
 	key := utils.CombineStr(flow.Phone, flow.SendType)
 	// cache get
-	cnt, err := dao.getCache(key)
+	cnt, err := dao.getCacheVCodeCount(key)
 	if err != nil {
 		return err
 	}
@@ -72,10 +81,11 @@ func (dao *VCodeDAO) SaveVCodeFlow(flow *model.SMSFlow) error {
 	return nil
 }
 
-func (dao *VCodeDAO) getCache(key string) (uint, error){
+func (dao *VCodeDAO) getCacheVCodeCount(key string) (uint, error) {
 	result, err := dao.cache.Get(key).Result()
 	switch err {
 	case nil:
+
 	case redis.Nil:
 		result = "0"
 	default:
@@ -88,4 +98,22 @@ func (dao *VCodeDAO) getCache(key string) (uint, error){
 	}
 
 	return uint(num), nil
+}
+
+func (dao *VCodeDAO) setCache(key, val string, expiration time.Duration) error {
+	return dao.cache.Set(key, val, expiration).Err()
+}
+
+func (dao *VCodeDAO) getCache(key string) (string, error) {
+	val, err := dao.cache.Get(key).Result()
+	switch err {
+	case nil:
+
+	case redis.Nil:
+		return "", nil
+	default:
+		return "", err
+	}
+
+	return val, nil
 }

@@ -23,7 +23,7 @@ import (
 //
 // 注册
 //func (s *Server) Register(c *gin.Context) {
-//	// TODO get apram
+//
 //	if err := s.loginManger.Register(); err != nil {
 //		// TODO log
 //		utils.HttpResponseErr(c, err)
